@@ -1,28 +1,48 @@
-import socket
+#!/usr/bin/python
+
+import serial
 from tools import *
 
+def get_pcc(times):
+    '''Calculate a point and 2 circles for Apollonius algorithm'''
+    speed_of_sound = 0.00112533 # feet/microsecond
+    mic_coords = (Point(1, 6), Point(0, 8), Point(-1, 6))
+    first_mic = times.index(min(times))
+    p = mic_coords[first_mic]
+    diffs = [times[i] - times[first_mic] for i in range(3)]
+    radii = [diffs[i] * speed_of_sound for i in range(3)]
+    circles = []
+
+    for i, r in enumerate(radii):
+        if r:
+            circles.append(Circle(mic_coords[i], r))
+
+    return p, circles[0], circles[1]
+
 def main():
-    HOST = ''
-    PORT = 5050
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((HOST, PORT))
-    s.listen(1)
-    conn, addr = s.accept()
+    ser = serial.Serial('/dev/ttyACM0', 9600)
+    times = [0, 0, 0]
 
-    print('Connection from: ' + str(addr))
+    try:
+        print('Listening on serial port. Ctrl-c to quit.')
+        while True:
+            msg = ser.readline().decode()
+            if msg:
+                times[int(msg[0])] = int(msg.split()[1])
 
-    while True:
-        msg = conn.recv(1024)
+                if 0 not in times: 
+                    p, c1, c2 = get_pcc(times)
+                    times = [0, 0, 0] # reset times for next calculation
 
-        # TODO: implement format_msg to return a point and 2 circles
-        p, c1, c2 = format_msg(msg)
+                coords = find_target(p, c1, c2)
 
-        coords = find_target(p, c1, c2)
+                print(coords.x, coords.y)
 
-        with open('data.json', 'a') as f:
-            f.write(coords + '\n')
+                with open('data.txt', 'a') as f:
+                    f.write(str(coords.x) + ', ' + str(coords.y) + '\n')
+    except KeyboardInterrupt:
+        print('exiting...')
 
-        conn.sendall(1)
 
 if __name__ == '__main__':
     main()

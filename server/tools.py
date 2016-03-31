@@ -72,7 +72,7 @@ def ltcp(p, c):
 
 def lpb2p(p1, p2):
     '''Line of perpendicular bisector of two points'''
-    midpoint = new Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2)
+    midpoint = Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2)
     m = -1 / slope(p1, p2)
     b = midpoint.y - (m * midpoint.x)
     return Line(m, b)
@@ -89,7 +89,7 @@ def c3p(p1, p2, p3):
     a2 = p2 if p2.y != p1.y else p3
     b1 = p2 if p2.y != p3.y else p1
     b2 = p3
-    l1 = lbp2p(a1, a2)
+    l1 = lpb2p(a1, a2)
     l2 = lpb2p(b1, b2)
     p = lines_intersection(l1, l2)
     return Circle(p, distance(p, p1))
