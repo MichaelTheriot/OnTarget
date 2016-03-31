@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import serial
+import time
 from tools import *
 
 def get_pcc(times):
@@ -38,8 +39,8 @@ def main():
 
                 print(coords.x, coords.y)
 
-                with open('data.txt', 'a') as f:
-                    f.write(str(coords.x) + ', ' + str(coords.y) + '\n')
+                with open('/mnt/usb/data.csv', 'a') as f:
+                    f.write(str(coords.x) + ',' + str(coords.y) + ',' + str(time.time() / 1000) + '\n')
     except KeyboardInterrupt:
         print('exiting...')
 
