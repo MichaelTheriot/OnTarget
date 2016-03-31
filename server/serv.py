@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 import serial
 import time
 from tools import *
@@ -39,8 +40,11 @@ def main():
 
                 print(coords.x, coords.y)
 
-                with open('/mnt/usb/data.csv', 'a') as f:
-                    f.write(str(coords.x) + ',' + str(coords.y) + ',' + str(time.time() / 1000) + '\n')
+                if os.path.ismount('/mnt/usb'):
+                    with open('/mnt/usb/data.csv', 'a') as f:
+                        f.write(str(coords.x) + ',' + str(coords.y) + ',' + 
+                                str(time.time() / 1000) + '\n')
+                    
     except KeyboardInterrupt:
         print('exiting...')
 
