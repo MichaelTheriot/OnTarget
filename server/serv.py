@@ -34,16 +34,16 @@ def main():
 
                 if 0 not in times: 
                     p, c1, c2 = get_pcc(times)
+                    coords = find_target(p, c1, c2)
+
+                    print(coords.x, coords.y)
+
+                    if os.path.ismount('/mnt/usb'):
+                        with open('/mnt/usb/data.csv', 'a') as f:
+                            f.write(str(coords.x) + ',' + str(coords.y) + ',' + 
+                                    str(time.time() / 1000) + '\n')
+
                     times = [0, 0, 0] # reset times for next calculation
-
-                coords = find_target(p, c1, c2)
-
-                print(coords.x, coords.y)
-
-                if os.path.ismount('/mnt/usb'):
-                    with open('/mnt/usb/data.csv', 'a') as f:
-                        f.write(str(coords.x) + ',' + str(coords.y) + ',' + 
-                                str(time.time() / 1000) + '\n')
                     
     except KeyboardInterrupt:
         print('exiting...')
