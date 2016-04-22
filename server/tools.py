@@ -116,7 +116,11 @@ def apollonius_ppc(p1, p2, c):
     return (p1, p2, tp0)
 
 def find_target(p, c1, c2):
-    result_a = apollonius_pcc(p, c1, c2)
-    result_b = apollonius_ppc(*result_a)
+    try:
+        result_a = apollonius_pcc(p, c1, c2)
+        result_b = apollonius_ppc(*result_a)
+    except ValueError:
+        return None
+
     c = c3p(*result_b)
     return c.p
