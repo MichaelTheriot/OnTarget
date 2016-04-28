@@ -37,8 +37,6 @@ def main():
         except SerialException:
             sys.exit('Serial connection failed. Exiting...')
 
-    times = [0, 0, 0]
-
     try:
         print('Listening on serial port. Ctrl-c to quit.')
         while True:
@@ -49,23 +47,20 @@ def main():
                 sys.exit()
 
             if msg:
-                times[int(msg[0])] = int(msg.split(':')[1])
+                times = [int(time) for time in msg.split()]
 
-                if 0 not in times: 
-                    p, c1, c2 = get_pcc(times)
-                    coords = find_target(p, c1, c2)
+                p, c1, c2 = get_pcc(times)
+                coords = find_target(p, c1, c2)
 
-                    if coords:
-                        print('chosen: ({:.2f}, {:.2f})'.format(coords.x, coords.y))
+                if coords:
+                    print('chosen: ({:.2f}, {:.2f})'.format(coords.x, coords.y))
 
-                        if os.path.ismount('/mnt/usb'):
-                            with open('/mnt/usb/data.csv', 'a') as f:
-                                f.write(str(coords.x) + ',' + str(coords.y) + ',' + 
-                                        str(time.time() / 1000) + '\n')
-                    else:
-                        print('Calculation aborted')
-
-                    times = [0, 0, 0] # reset times for next calculation
+                    if os.path.ismount('/mnt/usb'):
+                        with open('/mnt/usb/data.csv', 'a') as f:
+                            f.write(str(coords.x) + ',' + str(coords.y) + ',' + 
+                                    str(time.time() / 1000) + '\n')
+                else:
+                    print('Calculation aborted')
                     
     except KeyboardInterrupt:
         print('\nexiting...')
