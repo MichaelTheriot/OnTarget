@@ -4,6 +4,7 @@ import sys
 import os
 import serial
 import time
+import platform
 from tools import *
 from serial.serialutil import SerialException
 
@@ -25,10 +26,16 @@ def get_pcc(times):
     return p, circles[0], circles[1]
 
 def main():
-    try:
-        ser = serial.Serial('/dev/ttyACM0', 9600)
-    except SerialException:
-        ser = serial.Serial('/dev/ttyACM1', 9600)
+    if platform.system() == 'Linux':
+        try:
+            ser = serial.Serial('/dev/ttyACM0', 9600)
+        except SerialException:
+            ser = serial.Serial('/dev/ttyACM1', 9600)
+    else: 
+        try:
+            ser = serial.Serial(serial.tools.list_ports.comports()[0].name, 9600)
+        except SerialException:
+            sys.exit('Serial connection failed. Exiting...')
 
     times = [0, 0, 0]
 
