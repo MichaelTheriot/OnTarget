@@ -10,10 +10,11 @@ from serial.serialutil import SerialException
 def get_pcc(times):
     '''Calculate a point and 2 circles for Apollonius algorithm'''
     speed_of_sound = 0.00112533 # feet/microsecond
-    mic_coords = (Point(-0.5, 1), Point(-1 ,-0.5), Point(1, 0.5))
+    mic_coords = (Point(0, 4), Point(2, 1), Point(-3, 2))
     first_mic = times.index(min(times))
     p = mic_coords[first_mic]
     diffs = [times[i] - times[first_mic] for i in range(3)]
+    print(diffs)
     radii = [diffs[i] * speed_of_sound for i in range(3)]
     circles = []
 
@@ -48,7 +49,7 @@ def main():
                     coords = find_target(p, c1, c2)
 
                     if coords:
-                        print('({:.2f}, {:.2f})'.format(coords.x, coords.y))
+                        print('chosen: ({:.2f}, {:.2f})'.format(coords.x, coords.y))
 
                         if os.path.ismount('/mnt/usb'):
                             with open('/mnt/usb/data.csv', 'a') as f:
@@ -60,7 +61,7 @@ def main():
                     times = [0, 0, 0] # reset times for next calculation
                     
     except KeyboardInterrupt:
-        print('exiting...')
+        print('\nexiting...')
 
 
 if __name__ == '__main__':

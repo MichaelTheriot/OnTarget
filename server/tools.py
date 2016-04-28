@@ -113,6 +113,10 @@ def apollonius_ppc(p1, p2, c):
     h = lines_intersection(l1, l2)
     tp0s = ltcp(h, c)
     tp0 = tp0s[0] if distance(p1, tp0s[0]) < distance(p1, tp0s[1]) else tp0s[1]
+    c1 = c3p(p1, p2, tp0s[0])
+    c2 = c3p(p1, p2, tp0s[1])
+    print('({:.2f}, {:.2f})'.format(c1.p.x, c1.p.y))
+    print('({:.2f}, {:.2f})'.format(c2.p.x, c2.p.y))
     return (p1, p2, tp0)
 
 def find_target(p, c1, c2):
