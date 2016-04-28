@@ -7,6 +7,7 @@ import time
 import platform
 from tools import *
 from serial.serialutil import SerialException
+from serial.tools.list_ports import comports
 
 def get_pcc(times):
     '''Calculate a point and 2 circles for Apollonius algorithm'''
@@ -33,7 +34,7 @@ def main():
             ser = serial.Serial('/dev/ttyACM1', 9600)
     else: 
         try:
-            ser = serial.Serial(serial.tools.list_ports.comports()[0].name, 9600)
+            ser = serial.Serial('COM3', 9600)
         except SerialException:
             sys.exit('Serial connection failed. Exiting...')
 
