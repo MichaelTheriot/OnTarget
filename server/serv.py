@@ -16,7 +16,6 @@ def get_pcc(times):
     first_mic = times.index(min(times))
     p = mic_coords[first_mic]
     diffs = [times[i] - times[first_mic] for i in range(3)]
-    print(diffs)
     radii = [diffs[i] * speed_of_sound for i in range(3)]
     circles = []
 
@@ -54,7 +53,7 @@ def main():
                 coords = find_target(p, c1, c2)
 
                 if coords:
-                    print('chosen: ({:.2f}, {:.2f})'.format(coords.x, coords.y))
+                    print('({:.2f}, {:.2f})'.format(coords.x, coords.y))
 
                     if os.path.ismount('/mnt/usb'):
                         with open('/mnt/usb/data.csv', 'a') as f:
