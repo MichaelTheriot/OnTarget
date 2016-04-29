@@ -1,0 +1,19 @@
+svg [data-group="impacts"] {
+  fill: rgba(255, 0, 0, 0.8);
+}
+
+svg [data-group="nodes"] {
+  fill: #00f;
+}
+
+svg [data-group="impacts"].selected g:not(.selected) {
+  display: none;
+}
+
+svg [data-group="impacts"] circle {
+  cursor: crosshair;
+}
+
+svg [data-group="impacts"] text {
+  font-family: monospace;
+}
