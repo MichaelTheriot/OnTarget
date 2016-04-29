@@ -5,9 +5,29 @@ import os
 import serial
 import time
 import platform
+import socket
+import threading
 from tools import *
 from serial.serialutil import SerialException
 from serial.tools.list_ports import comports
+from queue import Queue
+
+def gui_server():
+    HOST = ''
+    PORT = 420 
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((HOST, PORT))
+    s.listen(1)
+    conn, addr = s.accept()
+
+    while True:
+        try:
+            coords = coord_q.get(False)
+        except queue.Empty:
+            continue
+        conn.sendall((str(coords.x) + ' ' + str(coords.y)).encode())
+        coord_q.task_done()
 
 def get_pcc(times):
     '''Calculate a point and 2 circles for Apollonius algorithm'''
@@ -25,7 +45,7 @@ def get_pcc(times):
 
     return p, circles[0], circles[1]
 
-def main():
+def main(argv):
     if platform.system() == 'Linux':
         try:
             ser = serial.Serial('/dev/ttyACM0', 9600)
@@ -36,6 +56,16 @@ def main():
             ser = serial.Serial('COM3', 9600)
         except SerialException:
             sys.exit('Serial connection failed. Exiting...')
+
+    if len(argv) > 1 and argv[1] == '-g':
+        gui = True
+    else:
+        gui = False
+
+    if gui:
+        coord_q = Queue()
+        gui_thread = threading.thread(target=gui_server, daemon=True)
+        gui_thread.start()
 
     try:
         print('Listening on serial port. Ctrl-c to quit.')
@@ -55,6 +85,9 @@ def main():
                 if coords:
                     print('({:.2f}, {:.2f})'.format(coords.x, coords.y))
 
+                    if gui:
+                        coord_q.put(coords, False)
+
                     if os.path.ismount('/mnt/usb'):
                         with open('/mnt/usb/data.csv', 'a') as f:
                             f.write(str(coords.x) + ',' + str(coords.y) + ',' + 
@@ -67,4 +100,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
