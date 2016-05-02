@@ -67,7 +67,7 @@ window.onload = function () {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  var ws = new WebSocket('ws://localhost:5001');
+  var ws = new WebSocket('ws://127.0.0.1:5001');
   var buffer = '';
   ws.onmessage = function (event) {
     console.log(event.data);

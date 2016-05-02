@@ -8,11 +8,14 @@ import platform
 import websockets
 import asyncio
 import glob
+import signal
+import functools
 from tools import *
 from serial.serialutil import SerialException
 from serial.tools.list_ports import comports
 
 def terminate():
+    loop.stop()
     sys.exit('\nexiting...')
 
 def get_pcc(times):
@@ -32,51 +35,48 @@ def get_pcc(times):
     return p, circles[0], circles[1]
 
 
-async def consume(websocket, path):
+async def transmit(websocket, path):
     if len(sys.argv) > 1 and sys.argv[1] == '-g':
         gui = True
     else:
         gui = False
 
+
     while True:
-        try:
-            await coords = coord_q.get()
-        except asyncio.QueueEmpty:
-            continue
-        if gui:
-            await websocket.send('{:.2f},{:.2f},{}\n'.format(coords.x, coords.y, time.time() * 1000))
-        print('({:.2f}, {:.2f})'.format(coords.x, coords.y))
+        try: 
+            msg = ser.readline().decode('ascii')
+        except SerialException:
+            sys.exit('Device disconnected. Exiting...')
+
+        if msg:
+            times = [int(time) for time in msg.split()]
+        else:
+            times = None
+
+        if times:
+            p, c1, c2 = get_pcc(times)
+            coords = find_target(p, c1, c2)
+
+            if coords:
+                print('({:.2f}, {:.2f})'.format(coords.x, coords.y))
+                if gui:
+                    await websocket.send('{:.2f},{:.2f},{}\n'.format(coords.x, 
+                                                                     coords.y, 
+                                                                     time.time() * 1000))
+
+            else:
+                print('Calculation aborted')
 
         if os.path.ismount('/mnt/usb'):
             with open('/mnt/usb/data.csv', 'a') as f:
                 f.write(str(coords.x) + ',' + str(coords.y) + ',' + 
                         str(time.time() * 1000) + '\n')
 
-
-async def produce():
-    while True:
-        try:
-            msg = ser.readline().decode()
-        except SerialException:
-            sys.exit('Device disconnected. Exiting...')
-
-        if msg:
-            times = [int(time) for time in msg.split()]
-
-            p, c1, c2 = get_pcc(times)
-            coords = find_target(p, c1, c2)
-
-            if coords:
-                coord_q.put_nowait(coords)
-
-            else:
-                print('Calculation aborted')
-
 if __name__ == '__main__':
     # establish serial connection
     if platform.system() == 'Linux':
         ports = glob.glob('/dev/tty[A-Za-z]*')
-    else if platform.system() == 'Windows': 
+    elif platform.system() == 'Windows': 
         ports = ['COM{}'.format(i + 1) for i in range(256)]
     else:
         sys.exit('Unsupported platform')
@@ -92,16 +92,16 @@ if __name__ == '__main__':
     if not ser:
         sys.exit('Serial connection failed.')
 
-    loop = asyncio.get_event_loop()
+    HOST = '127.0.0.1'
+    PORT = 5001
 
-    coord_q = asyncio.Queue()
-    start_server = websockets.serve(consume, '', 5001)
-    asyncio.ensure_future(start_server)
-    asyncio.ensure_future(produce())
+    loop = asyncio.get_event_loop()
+    start_server = websockets.serve(transmit, HOST, PORT)
 
     print('Listening on serial port. Ctrl-c to quit.')
 
     try:
+        loop.run_until_complete(start_server)
         loop.run_forever()
     except KeyboardInterrupt:
         loop.close()
