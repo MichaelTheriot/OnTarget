@@ -7,6 +7,7 @@ import time
 import platform
 import websockets
 import asyncio
+import glob
 from tools import *
 from serial.serialutil import SerialException
 from serial.tools.list_ports import comports
@@ -40,15 +41,22 @@ def get_pcc(times):
 
 def main(argv):
     if platform.system() == 'Linux':
+        ports = glob.glob('/dev/tty[A-Za-z]*')
+    else if platform.system() == 'Windows': 
+        ports = ['COM{}'.format(i + 1) for i in range(256)]
+    else:
+        sys.exit('Unsupported platform')
+
+    ser = None
+    for port in ports:
         try:
-            ser = serial.Serial('/dev/ttyACM0', 9600)
-        except SerialException:
-            ser = serial.Serial('/dev/ttyACM1', 9600)
-    else: 
-        try:
-            ser = serial.Serial('COM3', 9600)
-        except SerialException:
-            sys.exit('Serial connection failed. Exiting...')
+            ser = serial.Serial(port, 9600)
+            break
+        except (OSError, SerialException):
+            pass
+
+    if not ser:
+        sys.exit('Serial connection failed.')
 
     if len(argv) > 1 and argv[1] == '-g':
         gui = True
