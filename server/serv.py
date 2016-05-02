@@ -8,8 +8,6 @@ import platform
 import websockets
 import asyncio
 import glob
-import signal
-import functools
 from tools import *
 from serial.serialutil import SerialException
 from serial.tools.list_ports import comports
@@ -56,23 +54,23 @@ async def consume(websocket, path):
 
 
 async def produce():
-    try:
-        msg = ser.readline().decode()
-    except SerialException:
-        print('Device disconnected. Exiting...')
-        sys.exit()
+    while True:
+        try:
+            msg = ser.readline().decode()
+        except SerialException:
+            sys.exit('Device disconnected. Exiting...')
 
-    if msg:
-        times = [int(time) for time in msg.split()]
+        if msg:
+            times = [int(time) for time in msg.split()]
 
-        p, c1, c2 = get_pcc(times)
-        coords = find_target(p, c1, c2)
+            p, c1, c2 = get_pcc(times)
+            coords = find_target(p, c1, c2)
 
-        if coords:
-            coord_q.put_nowait(coords)
+            if coords:
+                coord_q.put_nowait(coords)
 
-        else:
-            print('Calculation aborted')
+            else:
+                print('Calculation aborted')
 
 if __name__ == '__main__':
     # establish serial connection
