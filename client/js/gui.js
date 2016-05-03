@@ -17,7 +17,7 @@ function TargetArea(radius, numMics, layers) {
   var lg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   lg.setAttribute('data-group', 'layers');
   lg.setAttribute('stroke', '#000');
-  lg.setAttribute('stroke-width', this._radius / 512 * (1 - this._zoom));
+  //lg.setAttribute('stroke-width', this._radius / 512 * (1 - this._zoom));
   lg.setAttribute('fill', 'none');
 
   // add circles to layer group
@@ -33,7 +33,7 @@ function TargetArea(radius, numMics, layers) {
   var cg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   cg.setAttribute('data-group', 'crosshair');
   cg.setAttribute('stroke', '#000');
-  cg.setAttribute('stroke-width', this._radius / 512 * (1 - this._zoom));
+  //cg.setAttribute('stroke-width', this._radius / 512 * (1 - this._zoom));
   //cg.setAttribute('stroke-dasharray', 0.5);
 
   // add crosshairs to crosshair group
@@ -60,7 +60,7 @@ function TargetArea(radius, numMics, layers) {
     var theta = 2 * Math.PI * i / numMics - Math.PI / 2;
     m.setAttribute('cx', Math.cos(theta) * radius + radius + this._padding);
     m.setAttribute('cy', Math.sin(theta) * radius + radius + this._padding);
-    m.setAttribute('r', this._padding * (1 - this._zoom));
+    //m.setAttribute('r', this._padding * (1 - this._zoom));
     mg.appendChild(m);
   }
 
@@ -111,6 +111,7 @@ function TargetArea(radius, numMics, layers) {
     this.scroll(event.deltaY);
   }).bind(this));
   window.test = this;
+  this.scroll(0);
 }
 
 Object.defineProperties(TargetArea.prototype, {
@@ -146,11 +147,11 @@ TargetArea.prototype.addImpact = function (x, y, time) {
   var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
   c.setAttribute('cx', x + this.padding + this.radius);
   c.setAttribute('cy', -y + this.padding + this.radius);
-  c.setAttribute('r', this._radius / 112 * (1 - this._zoom));
+  c.setAttribute('r', calcR(this));
   var n = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  n.setAttribute('x', x + (this.padding + this.radius + 1.1) * (1 - this._zoom));
-  n.setAttribute('y', -y + (this.padding + this.radius - 2) * (1 - this._zoom));
-  n.setAttribute('font-size', 5 * (1 - this._zoom));
+  n.setAttribute('x', calcX(this, x));
+  n.setAttribute('y', calcY(this, y));
+  n.setAttribute('font-size', calcFS(this));
   n.setAttribute('fill', '#000');
   n.textContent = this._impacts.length + 1;
   g.appendChild(n);
@@ -170,7 +171,7 @@ TargetArea.prototype.addImpact = function (x, y, time) {
 };
 
 TargetArea.prototype.scroll = function (delta) {
-  this._zoom = Math.max(-1, Math.min(1 - 1/64, this._zoom - delta / 1000));
+  this._zoom = Math.max(-1, Math.min(92/100, this._zoom - delta / 1000));
   this.redraw();
 };
 
@@ -180,11 +181,11 @@ TargetArea.prototype.redraw = function () {
   var b = (this.radius * 2 + this.padding * 2) * (1 - 1 * this._zoom);
   this._lg.setAttribute('stroke-width', this._radius / 512 * (1 - this._zoom));
   this._cg.setAttribute('stroke-width', this._radius / 512 * (1 - this._zoom));
-  for(var i = 0; i < this._impacts.length; i++) {
-    this._impacts[i].dom.c.setAttribute('r', this._radius / 112 * (1 - this._zoom));
-    this._impacts[i].dom.n.setAttribute('font-size', 5 * (1 - this._zoom));
-    this._impacts[i].dom.n.setAttribute('x', this._impacts[i].x + this.padding + this.radius + 1.1 * (1 - this._zoom));
-    this._impacts[i].dom.n.setAttribute('y', -this._impacts[i].y + this.padding + this.radius - 2 * (1 - this._zoom));
+  for(var impact of this._impacts) {
+    impact.dom.c.setAttribute('r', calcR(this));
+    impact.dom.n.setAttribute('font-size', calcFS(this));
+    impact.dom.n.setAttribute('x', calcX(this, impact.x));
+    impact.dom.n.setAttribute('y', calcY(this, impact.y));
   }
   for(var e = this._mg.firstChild; e; e = e.nextSibling) {
     e.setAttribute('r', this._padding * (1 - this._zoom));
@@ -195,3 +196,8 @@ TargetArea.prototype.redraw = function () {
 TargetArea.prototype.pan = function (x, y) {
   
 };
+
+var calcR = (svg) => svg._radius / 112 * (1 - svg._zoom);
+var calcFS = (svg) => (1 / svg._radius) * (1 - svg._zoom);
+var calcX = (svg, x) => x + svg.padding + svg.radius + (0.25 / svg._radius) * (1 - svg._zoom);
+var calcY = (svg, y) => -y + svg.padding + svg.radius - (0.25 / svg._radius) * (1 - svg._zoom);
