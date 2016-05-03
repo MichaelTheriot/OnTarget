@@ -5,29 +5,23 @@ import os
 import serial
 import time
 import platform
-import socket
-import threading
+import websockets
+import asyncio
+import glob
 from tools import *
 from serial.serialutil import SerialException
 from serial.tools.list_ports import comports
 from queue import Queue
 
-def gui_server():
-    HOST = ''
-    PORT = 420 
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((HOST, PORT))
-    s.listen(1)
-    conn, addr = s.accept()
-
+async def transmit(websocket, path):
     while True:
         try:
             coords = coord_q.get(False)
         except queue.Empty:
             continue
-        conn.sendall((str(coords.x) + ' ' + str(coords.y)).encode())
+        await websocket.send('{:.2f},{:.2f},{}\n'.format(coords.x, coords.y, time.time() * 1000))
         coord_q.task_done()
+
 
 def get_pcc(times):
     '''Calculate a point and 2 circles for Apollonius algorithm'''
@@ -47,15 +41,22 @@ def get_pcc(times):
 
 def main(argv):
     if platform.system() == 'Linux':
+        ports = glob.glob('/dev/tty[A-Za-z]*')
+    else if platform.system() == 'Windows': 
+        ports = ['COM{}'.format(i + 1) for i in range(256)]
+    else:
+        sys.exit('Unsupported platform')
+
+    ser = None
+    for port in ports:
         try:
-            ser = serial.Serial('/dev/ttyACM0', 9600)
-        except SerialException:
-            ser = serial.Serial('/dev/ttyACM1', 9600)
-    else: 
-        try:
-            ser = serial.Serial('COM3', 9600)
-        except SerialException:
-            sys.exit('Serial connection failed. Exiting...')
+            ser = serial.Serial(port, 9600)
+            break
+        except (OSError, SerialException):
+            pass
+
+    if not ser:
+        sys.exit('Serial connection failed.')
 
     if len(argv) > 1 and argv[1] == '-g':
         gui = True
@@ -64,8 +65,9 @@ def main(argv):
 
     if gui:
         coord_q = Queue()
-        gui_thread = threading.thread(target=gui_server, daemon=True)
-        gui_thread.start()
+        start_server = websockets.serve(transmit, '', 5001)
+        asyncio.get_event_loop().run_until_complete(start_server)
+        asyncio.get_event_loop().run_forever()
 
     try:
         print('Listening on serial port. Ctrl-c to quit.')
@@ -91,7 +93,7 @@ def main(argv):
                     if os.path.ismount('/mnt/usb'):
                         with open('/mnt/usb/data.csv', 'a') as f:
                             f.write(str(coords.x) + ',' + str(coords.y) + ',' + 
-                                    str(time.time() / 1000) + '\n')
+                                    str(time.time() * 1000) + '\n')
                 else:
                     print('Calculation aborted')
                     
