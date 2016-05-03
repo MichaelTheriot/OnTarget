@@ -7,7 +7,7 @@ function TargetArea(radius, numMics, layers) {
   this._layers = layers;
   this._padding = this._radius / 84;
   this._impacts = [];
-  this._zoom = 0;
+  this._zoom = calcZoom(this, 0);
 
   // create actual DOM element
   var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -17,7 +17,7 @@ function TargetArea(radius, numMics, layers) {
   var lg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   lg.setAttribute('data-group', 'layers');
   lg.setAttribute('stroke', '#000');
-  //lg.setAttribute('stroke-width', this._radius / 512 * (1 - this._zoom));
+  lg.setAttribute('stroke-width', calcSW(this));
   lg.setAttribute('fill', 'none');
 
   // add circles to layer group
@@ -33,7 +33,7 @@ function TargetArea(radius, numMics, layers) {
   var cg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   cg.setAttribute('data-group', 'crosshair');
   cg.setAttribute('stroke', '#000');
-  //cg.setAttribute('stroke-width', this._radius / 512 * (1 - this._zoom));
+  cg.setAttribute('stroke-width', calcSW(this));
   //cg.setAttribute('stroke-dasharray', 0.5);
 
   // add crosshairs to crosshair group
@@ -60,7 +60,7 @@ function TargetArea(radius, numMics, layers) {
     var theta = 2 * Math.PI * i / numMics - Math.PI / 2;
     m.setAttribute('cx', Math.cos(theta) * radius + radius + this._padding);
     m.setAttribute('cy', Math.sin(theta) * radius + radius + this._padding);
-    //m.setAttribute('r', this._padding * (1 - this._zoom));
+    m.setAttribute('r', calcNR(this));
     mg.appendChild(m);
   }
 
@@ -111,7 +111,6 @@ function TargetArea(radius, numMics, layers) {
     this.scroll(event.deltaY);
   }).bind(this));
   window.test = this;
-  this.scroll(0);
 }
 
 Object.defineProperties(TargetArea.prototype, {
@@ -171,7 +170,7 @@ TargetArea.prototype.addImpact = function (x, y, time) {
 };
 
 TargetArea.prototype.scroll = function (delta) {
-  this._zoom = Math.max(-1, Math.min(92/100, this._zoom - delta / 1000));
+  this._zoom = calcZoom(this, delta);
   this.redraw();
 };
 
@@ -179,8 +178,8 @@ TargetArea.prototype.redraw = function () {
   var x = this._zoom * (this.radius + this._padding) + this._offX;
   var y = this._zoom * (this.radius + this._padding) + this._offY;
   var b = (this.radius * 2 + this.padding * 2) * (1 - 1 * this._zoom);
-  this._lg.setAttribute('stroke-width', this._radius / 512 * (1 - this._zoom));
-  this._cg.setAttribute('stroke-width', this._radius / 512 * (1 - this._zoom));
+  this._lg.setAttribute('stroke-width', calcSW(this));
+  this._cg.setAttribute('stroke-width', calcSW(this));
   for(var impact of this._impacts) {
     impact.dom.c.setAttribute('r', calcR(this));
     impact.dom.n.setAttribute('font-size', calcFS(this));
@@ -188,7 +187,7 @@ TargetArea.prototype.redraw = function () {
     impact.dom.n.setAttribute('y', calcY(this, impact.y));
   }
   for(var e = this._mg.firstChild; e; e = e.nextSibling) {
-    e.setAttribute('r', this._padding * (1 - this._zoom));
+    e.setAttribute('r', calcNR(this));
   }
   this.dom.setAttribute('viewBox', x + ' ' + y + ' ' + b + ' ' + b);
 };
@@ -201,3 +200,6 @@ var calcR = (svg) => svg._radius / 112 * (1 - svg._zoom);
 var calcFS = (svg) => (1 / svg._radius) * (1 - svg._zoom);
 var calcX = (svg, x) => x + svg.padding + svg.radius + (0.25 / svg._radius) * (1 - svg._zoom);
 var calcY = (svg, y) => -y + svg.padding + svg.radius - (0.25 / svg._radius) * (1 - svg._zoom);
+var calcSW = (svg) => svg._radius / 512 * (1 - svg._zoom);
+var calcNR = (svg) => svg._padding * (1 - svg._zoom);
+var calcZoom = (svg, delta) => Math.max(-1, Math.min(92/100, (svg._zoom || 0) - delta / 1000));
