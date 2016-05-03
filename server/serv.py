@@ -60,9 +60,12 @@ async def transmit(websocket, path):
             if coords:
                 print('({:.2f}, {:.2f})'.format(coords.x, coords.y))
                 if gui:
-                    await websocket.send('{:.2f},{:.2f},{}\n'.format(coords.x, 
-                                                                     coords.y, 
-                                                                     time.time() * 1000))
+                    try:
+                        await websocket.send('{:.2f},{:.2f},{}\n'.format(coords.x, 
+                                                                         coords.y, 
+                                                                         time.time() * 1000))
+                    except websockets.exceptions.ConnectionClosed:
+                        return
 
             else:
                 print('Calculation aborted')
