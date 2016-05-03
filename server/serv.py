@@ -41,7 +41,6 @@ async def transmit(websocket, path):
     else:
         gui = False
 
-
     while True:
         try: 
             msg = ser.readline().decode('ascii')
@@ -63,7 +62,6 @@ async def transmit(websocket, path):
                     await websocket.send('{:.2f},{:.2f},{}\n'.format(coords.x, 
                                                                      coords.y, 
                                                                      time.time() * 1000))
-
             else:
                 print('Calculation aborted')
 

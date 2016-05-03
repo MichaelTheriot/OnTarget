@@ -1,5 +1,5 @@
 window.onload = function () {
-  var ta = new TargetArea(150, 6, 3);
+  var ta = new TargetArea(5, 6, 3);
   ta._svg.setAttribute('id', 'target');
   var aside = document.createElement('aside');
   aside.appendChild(ta._svg);
