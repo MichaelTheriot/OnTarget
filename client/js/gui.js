@@ -88,8 +88,8 @@ function TargetArea(radius, numMics, layers) {
   var cy = 0;
 
   var panningHandler = (function (event) {
-    this._offX = cx - event.x;
-    this._offY = cy - event.y;
+    this._offX = event.x;
+    this._offY = event.y;
     this.redraw();
   }).bind(this);
 
@@ -197,9 +197,9 @@ TargetArea.prototype.pan = function (x, y) {
 };
 
 var calcR = (svg) => svg._radius / 112 * (1 - svg._zoom);
-var calcFS = (svg) => (1 / svg._radius) * (1 - svg._zoom);
-var calcX = (svg, x) => x + svg.padding + svg.radius + (0.25 / svg._radius) * (1 - svg._zoom);
-var calcY = (svg, y) => -y + svg.padding + svg.radius - (0.25 / svg._radius) * (1 - svg._zoom);
+var calcFS = (svg) => (svg._radius / 30) * (1 - svg._zoom);
+var calcX = (svg, x) => x + svg.padding + svg.radius + 0.25 * (svg._radius / 30) * (1 - svg._zoom);
+var calcY = (svg, y) => -y + svg.padding + svg.radius - 0.25 * (svg._radius / 30) * (1 - svg._zoom);
 var calcSW = (svg) => svg._radius / 512 * (1 - svg._zoom);
 var calcNR = (svg) => svg._padding * (1 - svg._zoom);
 var calcZoom = (svg, delta) => Math.max(-1, Math.min(92/100, (svg._zoom || 0) - delta / 1000));
