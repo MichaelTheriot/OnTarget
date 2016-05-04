@@ -143,4 +143,15 @@ window.onload = function () {
   });
   uploadBtn.appendChild(inputFile);
   document.querySelector('main').appendChild(uploadBtn);
+  var clearBtn = document.createElement('button');
+  clearBtn.setAttribute('class', 'button');
+  clearBtn.textContent = 'Clear Data';
+  clearBtn.addEventListener('click', () => {
+    impacts = [];
+    while(record.firstChild) {
+      record.removeChild(record.firstChild);
+    }
+    ta.clear();
+  });
+  document.querySelector('main').appendChild(clearBtn);
 };
