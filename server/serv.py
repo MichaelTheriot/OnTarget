@@ -14,6 +14,11 @@ from tools import *
 from serial.serialutil import SerialException
 from serial.tools.list_ports import comports
 
+class Impact(object):
+    def __init__(self, coords, time):
+        self.coords = coords
+        self.time = time
+
 def terminate():
     loop.stop()
     sys.exit('\nexiting...')
@@ -36,6 +41,17 @@ def get_pcc(times):
 
 
 async def transmit(websocket, path):
+    while True:
+        try:
+            while not work_q.empty():
+                impact = await work_q.get()
+                await websocket.send('{:.2f},{:.2f},{}\n'.format(impact.coords.x,
+                                                                 impact.coords.y,
+                                                                 impact.time)
+        except websockets.exceptions.ConnectionClosed:
+            work_q.put_nowait(coords)
+
+async def produce():
     if len(sys.argv) > 1 and sys.argv[1] == '-g':
         gui = True
     else:
@@ -43,7 +59,7 @@ async def transmit(websocket, path):
 
     while True:
         try: 
-            msg = ser.readline().decode('ascii')
+            msg = ser.readline().decode()
         except SerialException:
             sys.exit('Device disconnected. Exiting...')
 
@@ -55,20 +71,19 @@ async def transmit(websocket, path):
         if times:
             p, c1, c2 = get_pcc(times)
             coords = find_target(p, c1, c2)
+            impact = Impact(coords, time.time() * 1000)
 
             if coords:
                 print('({:.2f}, {:.2f})'.format(coords.x, coords.y))
                 if gui:
-                    await websocket.send('{:.2f},{:.2f},{}\n'.format(coords.x, 
-                                                                     coords.y, 
-                                                                     time.time() * 1000))
+                    work_q.put_nowait(impact)
+
+                if os.path.ismount('/mnt/usb'):
+                    with open('/mnt/usb/data.csv', 'a') as f:
+                        f.write('{},{},{}'.format(impact.coords.x, impact.coords.y, impact.time))
             else:
                 print('Calculation aborted')
 
-        if os.path.ismount('/mnt/usb'):
-            with open('/mnt/usb/data.csv', 'a') as f:
-                f.write(str(coords.x) + ',' + str(coords.y) + ',' + 
-                        str(time.time() * 1000) + '\n')
 
 if __name__ == '__main__':
     # establish serial connection
@@ -93,8 +108,10 @@ if __name__ == '__main__':
     HOST = '127.0.0.1'
     PORT = 5001
 
+    work_q = asyncio.Queue()
     loop = asyncio.get_event_loop()
     start_server = websockets.serve(transmit, HOST, PORT)
+    asyncio.ensure_future(produce())
 
     print('Listening on serial port. Ctrl-c to quit.')
 
