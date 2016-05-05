@@ -10,6 +10,7 @@ import asyncio
 import glob
 import signal
 import functools
+import concurrent
 from tools import *
 from serial.serialutil import SerialException
 from serial.tools.list_ports import comports
@@ -39,6 +40,19 @@ def get_pcc(times):
 
     return p, circles[0], circles[1]
 
+def get_msg():
+    try:
+        msg = ser.readline()
+    except SerialException:
+        sys.exit('Device disconnected. Exiting...')
+    return msg
+
+async def read_serial_async():
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        res = await loop.run_in_executor(executor, get_msg)
+        return res.decode()
+
+
 
 async def transmit(websocket, path):
     while True:
@@ -58,11 +72,7 @@ async def produce():
         gui = False
 
     while True:
-        try: 
-            msg = ser.readline().decode()
-        except SerialException:
-            sys.exit('Device disconnected. Exiting...')
-
+        msg = await read_serial_async()
         if msg:
             times = [int(time) for time in msg.split()]
         else:
@@ -80,7 +90,9 @@ async def produce():
 
                 if os.path.ismount('/mnt/usb'):
                     with open('/mnt/usb/data.csv', 'a') as f:
-                        f.write('{:.2f},{:.2f},{}'.format(impact.coords.x, impact.coords.y, impact.time))
+                        f.write('{:.2f},{:.2f},{}'.format(impact.coords.x, 
+                                                          impact.coords.y, 
+                                                          impact.time))
             else:
                 print('Calculation aborted')
 
@@ -112,6 +124,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     start_server = websockets.serve(transmit, HOST, PORT)
     asyncio.ensure_future(produce())
+    asyncio.ensure_future(read_serial_async())
 
     print('Listening on serial port. Ctrl-c to quit.')
 
