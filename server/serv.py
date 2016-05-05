@@ -13,16 +13,6 @@ from serial.serialutil import SerialException
 from serial.tools.list_ports import comports
 from queue import Queue
 
-async def transmit(websocket, path):
-    while True:
-        try:
-            coords = coord_q.get(False)
-        except queue.Empty:
-            continue
-        await websocket.send('{:.2f},{:.2f},{}\n'.format(coords.x, coords.y, time.time() * 1000))
-        coord_q.task_done()
-
-
 def get_pcc(times):
     '''Calculate a point and 2 circles for Apollonius algorithm'''
     speed_of_sound = 0.00112533 # feet/microsecond
@@ -42,7 +32,7 @@ def get_pcc(times):
 def main(argv):
     if platform.system() == 'Linux':
         ports = glob.glob('/dev/tty[A-Za-z]*')
-    else if platform.system() == 'Windows': 
+    elif platform.system() == 'Windows': 
         ports = ['COM{}'.format(i + 1) for i in range(256)]
     else:
         sys.exit('Unsupported platform')
@@ -57,17 +47,6 @@ def main(argv):
 
     if not ser:
         sys.exit('Serial connection failed.')
-
-    if len(argv) > 1 and argv[1] == '-g':
-        gui = True
-    else:
-        gui = False
-
-    if gui:
-        coord_q = Queue()
-        start_server = websockets.serve(transmit, '', 5001)
-        asyncio.get_event_loop().run_until_complete(start_server)
-        asyncio.get_event_loop().run_forever()
 
     try:
         print('Listening on serial port. Ctrl-c to quit.')
@@ -86,9 +65,6 @@ def main(argv):
 
                 if coords:
                     print('({:.2f}, {:.2f})'.format(coords.x, coords.y))
-
-                    if gui:
-                        coord_q.put(coords, False)
 
                     if os.path.ismount('/mnt/usb'):
                         with open('/mnt/usb/data.csv', 'a') as f:
