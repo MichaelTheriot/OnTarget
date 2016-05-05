@@ -1,5 +1,5 @@
 window.onload = function () {
-  var ta = new TargetArea(150, 6, 3);
+  var ta = new TargetArea(5, 6, 3);
   ta._svg.setAttribute('id', 'target');
   var aside = document.createElement('aside');
   aside.appendChild(ta._svg);
@@ -67,7 +67,7 @@ window.onload = function () {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  var ws = new WebSocket('ws://localhost:5001');
+  var ws = new WebSocket('ws://127.0.0.1:5001');
   var buffer = '';
   ws.onmessage = function (event) {
     console.log(event.data);
