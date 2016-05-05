@@ -47,7 +47,7 @@ async def transmit(websocket, path):
                 impact = await work_q.get()
                 await websocket.send('{:.2f},{:.2f},{}\n'.format(impact.coords.x,
                                                                  impact.coords.y,
-                                                                 impact.time)
+                                                                 impact.time))
         except websockets.exceptions.ConnectionClosed:
             work_q.put_nowait(coords)
 
