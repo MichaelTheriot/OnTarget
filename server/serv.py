@@ -8,6 +8,12 @@ import platform
 import websockets
 import asyncio
 import glob
+<<<<<<< HEAD
+=======
+import signal
+import functools
+import concurrent
+>>>>>>> 4ec7c2576f8edeb933eebd1bb28cc9ed119f3b8f
 from tools import *
 from serial.serialutil import SerialException
 from serial.tools.list_ports import comports
@@ -39,7 +45,69 @@ def get_pcc(times):
 
     return p, circles[0], circles[1]
 
+<<<<<<< HEAD
 def main(argv):
+=======
+def get_msg():
+    try:
+        msg = ser.readline()
+    except SerialException:
+        sys.exit('Device disconnected. Exiting...')
+    return msg
+
+async def read_serial_async():
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        res = await loop.run_in_executor(executor, get_msg)
+        return res.decode()
+
+
+
+async def transmit(websocket, path):
+    while True:
+        try:
+            while not work_q.empty():
+                impact = await work_q.get()
+                await websocket.send('{:.2f},{:.2f},{}\n'.format(impact.coords.x,
+                                                                 impact.coords.y,
+                                                                 impact.time))
+        except websockets.exceptions.ConnectionClosed:
+            work_q.put_nowait(coords)
+
+async def produce():
+    if len(sys.argv) > 1 and sys.argv[1] == '-g':
+        gui = True
+    else:
+        gui = False
+
+    while True:
+        msg = await read_serial_async()
+        if msg:
+            times = [int(time) for time in msg.split()]
+        else:
+            times = None
+
+        if times:
+            p, c1, c2 = get_pcc(times)
+            coords = find_target(p, c1, c2)
+            impact = Impact(coords, time.time() * 1000)
+
+            if coords:
+                print('({:.2f}, {:.2f})'.format(coords.x, coords.y))
+                if gui:
+                    work_q.put_nowait(impact)
+
+                if os.path.ismount('/mnt/usb'):
+                    with open('/mnt/usb/data.csv', 'a') as f:
+                        f.write('{:.2f},{:.2f},{}'.format(impact.coords.x, 
+                                                          impact.coords.y, 
+                                                          impact.time))
+            else:
+                print('Calculation aborted')
+
+
+if __name__ == '__main__':
+    # establish serial connection
+>>>>>>> 4ec7c2576f8edeb933eebd1bb28cc9ed119f3b8f
     if platform.system() == 'Linux':
         ports = glob.glob('/dev/tty[A-Za-z]*')
     else if platform.system() == 'Windows': 
@@ -58,10 +126,21 @@ def main(argv):
     if not ser:
         sys.exit('Serial connection failed.')
 
+<<<<<<< HEAD
     if len(argv) > 1 and argv[1] == '-g':
         gui = True
     else:
         gui = False
+=======
+    HOST = '127.0.0.1'
+    PORT = 5001
+
+    work_q = asyncio.Queue()
+    loop = asyncio.get_event_loop()
+    start_server = websockets.serve(transmit, HOST, PORT)
+    asyncio.ensure_future(produce())
+    asyncio.ensure_future(read_serial_async())
+>>>>>>> 4ec7c2576f8edeb933eebd1bb28cc9ed119f3b8f
 
     if gui:
         coord_q = Queue()
