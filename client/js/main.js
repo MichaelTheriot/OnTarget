@@ -67,25 +67,6 @@ window.onload = function () {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  var ws = new WebSocket('ws://127.0.0.1:5001');
-  var buffer = '';
-  ws.onmessage = function (event) {
-    console.log(event.data);
-    buffer += event.data;
-    parseBuffer();
-  }
-  function parseBuffer() {
-    if(buffer.indexOf('\n') > -1) {
-      let chunks = buffer.split('\n');
-      let cap = chunks.length - !chunks[chunks.length - 1].endsWith('\n');
-      let i;
-      for(i = 0; i < cap; i++) {
-        addImpact(...chunks[i].split(',').map(Number));
-      }
-      buffer = chunks[i] || '';
-    }
-  }
-
   /*function go() {
     var r = getRandomInt(0, 70);
     var ang = getRandomInt(0, 360);
@@ -154,4 +135,45 @@ window.onload = function () {
     ta.clear();
   });
   document.querySelector('main').appendChild(clearBtn);
+
+  var statusBtn = document.querySelector('#status');
+
+  var ws;
+  var addr = 'ws://127.0.0.1:5001';
+  var buffer = '';
+
+  var delay = (fn, time) => new Promise((resolve, reject) => setTimeout(() => resolve(fn()), time));
+
+  var connect = () => new Promise((resolve, reject) => {
+    ws = new WebSocket(addr);
+    ws.onopen = () => {
+      statusBtn.setAttribute('class', 'connected');
+    };
+    ws.onmessage = event => parseBuffer(event.data);
+    var rejected = false;
+    var safeReject = () => {
+      if(!rejected) {
+        rejected = true;
+        statusBtn.removeAttribute('class');
+        reject();
+      }
+    };
+    ws.onerror = ws.onclose = safeReject;
+  }).catch(() => delay(connect, 10000));
+
+  function parseBuffer(data = '') {
+    buffer += data;
+    if(buffer.indexOf('\n') > -1) {
+      let chunks = buffer.split('\n');
+      let cap = chunks.length - !chunks[chunks.length - 1].endsWith('\n');
+      let i;
+      for(i = 0; i < cap; i++) {
+        addImpact(...chunks[i].split(',').map(Number));
+      }
+      buffer = chunks[i] || '';
+    }
+  }
+
+
+  connect();
 };

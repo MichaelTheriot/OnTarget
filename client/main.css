@@ -108,3 +108,28 @@ main .button:hover, main .button:focus {
   outline: none;
   background-color: #d55;
 }
+
+#status {
+  text-align: center;
+  font-family: monospace;
+  line-height: 2.4em;
+  text-transform: uppercase;
+  font-weight: bold;
+  border: 1px solid #000;
+}
+
+#status.connected {
+  background-color: #2e2;
+}
+
+#status:not(.connected) {
+  background-color: #e22;
+}
+
+#status.connected::before {
+  content: 'Connected to server';
+}
+
+#status:not(.connected)::before {
+  content: 'Disconnected from server';
+}
